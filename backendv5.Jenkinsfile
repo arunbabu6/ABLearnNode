@@ -93,31 +93,40 @@ pipeline {
             }
         }
 
-        stage('Generate Documentation') {
-            agent any
-            steps {
-                script {
-                    // Create a temporary directory in the Jenkins workspace to hold the unstashed files
-                    sh "mkdir -p temp_backend"
-                    // Unstash the backend source code into this temporary directory
-                    dir('temp_backend') {
-                        unstash 'backend-src'
-                    }
-                    // Copy the source code specifically to the 'backenddocs' directory on the Docker host
-                    sshagent(['sshtoaws']) {
-                        sh "ssh -v -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'rm -rf ${PROJECT_DIR}/backenddocs/*'"
-                        sh "ssh -v -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'mkdir ${PROJECT_DIR}/backenddocs/docs'"
-                        sh "scp -v -rp temp_backend/* ubuntu@3.23.92.68:${PROJECT_DIR}/backenddocs"
-                        // Generate the documentation on the Docker host, specifying the output within the same 'backenddocs' directory or a subdirectory of it for the generated docs
-                        ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 "source ~/.nvm/nvm.sh && cd /opt/docker-green/backenddocs && /usr/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs"
-                        // Optionally archieving the generated documentation in Jenkins, copy it back from the Docker host
-                        sh "scp -rp ubuntu@3.23.92.68:${PROJECT_DIR}/backenddocs/docs ./docs-backend"
-                    }
-                    // Archiving the documentation if copied back
-                    archiveArtifacts artifacts: 'docs-backend/**', allowEmptyArchive: true
-                }
+stage('Generate Documentation') {
+    agent any
+    steps {
+        script {
+            // Create a temporary directory in the Jenkins workspace to hold the unstashed files
+            sh "mkdir -p temp_backend"
+            // Unstash the backend source code into this temporary directory
+            dir('temp_backend') {
+                unstash 'backend-src'
+            }
+            // Use SSH Agent to handle the SSH keys and connections
+            sshagent(['sshtoaws']) {
+                // Define the project directory once and reuse the variable
+                def projectDir = '/opt/docker-green'
+                
+                // Clear the remote documentation directory before copying new files
+                sh "ssh -v -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'rm -rf ${projectDir}/backenddocs/*'"
+                sh "ssh -v -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'mkdir -p ${projectDir}/backenddocs/docs'"
+                
+                // Copy the source code to the 'backenddocs' directory on the Docker host
+                sh "scp -v -rp temp_backend/* ubuntu@3.23.92.68:${projectDir}/backenddocs"
+                
+                // Generate the documentation on the Docker host, specifying the output within the 'docs' subdirectory
+                sh "ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'source ~/.nvm/nvm.sh && cd ${projectDir}/backenddocs && /usr/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'"
+                
+                // Optionally archive the generated documentation in Jenkins, copy it back from the Docker host
+                sh "scp -rp ubuntu@3.23.92.68:${projectDir}/backenddocs/docs ./docs-backend"
+            }
+            // Archive the documentation if copied back
+            archiveArtifacts artifacts: 'docs-backend/**', allowEmptyArchive: true
         }
     }
+}
+
 
         // SonarQube Analysis and Snyk Security Scan 
        // stage('SonarQube Analysis') {
