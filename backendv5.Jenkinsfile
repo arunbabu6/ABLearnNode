@@ -105,19 +105,16 @@ stage('Generate Documentation') {
             }
             // Use SSH Agent to handle the SSH keys and connections
             sshagent(['sshtoaws']) {
-                // Define the project directory once and reuse the variable
                 def projectDir = '/opt/docker-green'
-                
                 // Clear the remote documentation directory before copying new files
-                sh "ssh -v -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'rm -rf ${projectDir}/backenddocs/*'"
-                sh "ssh -v -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'mkdir -p ${projectDir}/backenddocs/docs'"
-                
+                sh "ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'rm -rf ${projectDir}/backenddocs/*'"
+                sh "ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'mkdir -p ${projectDir}/backenddocs/docs'"
                 // Copy the source code to the 'backenddocs' directory on the Docker host
-                sh "scp -v -rp temp_backend/* ubuntu@3.23.92.68:${projectDir}/backenddocs"
-                
-                // Generate the documentation on the Docker host, specifying the output within the 'docs' subdirectory
-                sh "ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'source ~/.nvm/nvm.sh && cd ${projectDir}/backenddocs && /usr/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'"
-                
+                sh "scp -rp temp_backend/* ubuntu@3.23.92.68:${projectDir}/backenddocs"
+                // Generate the documentation on the Docker host
+                sh """
+                ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'source ~/.nvm/nvm.sh && cd ${projectDir}/backenddocs && /usr/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'
+                """
                 // Optionally archive the generated documentation in Jenkins, copy it back from the Docker host
                 sh "scp -rp ubuntu@3.23.92.68:${projectDir}/backenddocs/docs ./docs-backend"
             }
@@ -126,6 +123,7 @@ stage('Generate Documentation') {
         }
     }
 }
+
 
 
         // SonarQube Analysis and Snyk Security Scan 
