@@ -224,7 +224,7 @@ stage('Trivy Vulnerability Scan') {
 
                     # Use the pre-placed custom HTML template for the scan
                     echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} with Trivy..." &&
-                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
+                    trivy image --format template --template "@/opt/docker-green/Trivy/html1.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
                 '
                 """
 
