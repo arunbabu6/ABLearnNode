@@ -191,12 +191,12 @@ stage('Generate Documentation') {
                         }
                         sshagent(['jenkinaccess']) {
                             // Clear the 'artifacts' directory on the Docker host
-                            sh "ssh -v -i ab@host.docker.internal 'rm -rf ${PROJECT_DIR}/artifactsb/*'"
+                            sh "ssh -v ab@host.docker.internal 'rm -rf ${PROJECT_DIR}/artifactsb/*'"
                             sh "scp -v -rp artifactsb/* ab@host.docker.internal:${PROJECT_DIR}/artifactsb/"
-                            sh "ssh -v -i ab@host.docker.internal 'ls -la ${PROJECT_DIR}/artifactsb/'"
+                            sh "ssh -v ab@host.docker.internal 'ls -la ${PROJECT_DIR}/artifactsb/'"
 
                             // Build the Docker image on the Docker host
-                            sh "ssh -v -i ab@host.docker.internal 'cd ${PROJECT_DIR} && docker build -f backend.Dockerfile -t ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} .'"
+                            sh "ssh -v ab@host.docker.internal 'cd ${PROJECT_DIR} && docker build -f backend.Dockerfile -t ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} .'"
 
                         }
                         // Log in to DockerHub and push the image
