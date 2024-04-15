@@ -113,7 +113,7 @@ stage('Generate Documentation') {
                 sh "scp -rp temp_backend/* ab@host.docker.internal:${projectDir}/backenddocs"
                 // Generate the documentation on the Docker host
                 sh """
-                ssh ab@host.docker.internal 'source ~/.nvm/nvm.sh && cd /opt/docker-green/backenddocs && /home/ubuntu/.nvm/versions/node/v21.7.3/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'
+                ssh ab@host.docker.internal 'source ~/.nvm/nvm.sh && cd /opt/docker-green/backenddocs && /home/ab/.nvm/versions/node/v21.7.3/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'
                 """
                 // Optionally archive the generated documentation in Jenkins, copy it back from the Docker host
                 sh "scp -rp ab@host.docker.internal:${projectDir}/backenddocs/docs ./docs-backend"
