@@ -219,13 +219,12 @@ stage('Trivy Vulnerability Scan') {
                 // Combine commands into one SSH session and handle command execution properly
                 sh """
                 ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 '
-                    # Download the Trivy DB and the HTML template
+                    # Ensure the Trivy database is up to date
                     trivy image --download-db-only &&
-                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl > /opt/docker-green/Trivy/html.tpl &&
 
-                    # Perform the scan and generate HTML report
+                    # Use the pre-placed custom HTML template for the scan
                     echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} with Trivy..." &&
-                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}
+                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
                 '
                 """
 
@@ -235,7 +234,7 @@ stage('Trivy Vulnerability Scan') {
                 // Archive the HTML report as an artifact
                 archiveArtifacts artifacts: "trivy-report-html--${env.BUILD_NUMBER}.html", onlyIfSuccessful: true
                 
-                // Publish the HTML report to Jenkins UI
+                // Publish the HTML report to the Jenkins UI
                 publishHTML target: [
                     reportName: 'Trivy Vulnerability HTML Report',
                     reportDir: '.',
