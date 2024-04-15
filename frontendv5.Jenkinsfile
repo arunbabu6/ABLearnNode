@@ -181,25 +181,35 @@ pipeline {
         }
 
 
-        stage('Trivy Vulnerability Scan') {
-            agent any
-            steps {
-                script {
-                    // Wrapping the SSH commands in a single SSH session
-                    sshagent(['sshtoaws']) {
-                        // Execute Trivy scan and echo the scanning process
-                        sh "ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 'trivy image --download-db-only && \
-                        echo \"Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} with Trivy...\" && \
-                        trivy image --format json --output \"/opt/docker-green/Trivy/trivy-report--${env.BUILD_NUMBER}.json\" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER}'"
-                        // Correctly execute scp within a sh command block
-                        sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report--${env.BUILD_NUMBER}.json ."
 
-                        // Use double quotes for string interpolation
-                        archiveArtifacts artifacts: "trivy-report--${env.BUILD_NUMBER}.json", onlyIfSuccessful: true
-                    }
-                }
+stage('Trivy Vulnerability Scan') {
+    agent any
+    steps {
+        script {
+            // Use sshagent to handle private key for SSH session
+            sshagent(['sshtoaws']) {
+                // Execute commands on the remote server via SSH
+                sh """
+                ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 '
+                trivy image --download-db-only && \
+                echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} with Trivy..." && \
+                trivy image --format json --output "/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} && \
+                trivy image --format table --output "/opt/docker-green/Trivy/trivy-report-txt--${env.BUILD_NUMBER}.txt" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER}
+                '
+                """
+
+                // Copy the JSON report file to the Jenkins workspace
+                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json ."
+
+                // Copy the human-readable text report file to the Jenkins workspace
+                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-txt--${env.BUILD_NUMBER}.txt ."
+
+                // Archive both artifacts for the build
+                archiveArtifacts artifacts: "trivy-report-json--${env.BUILD_NUMBER}.json,trivy-report-txt--${env.BUILD_NUMBER}.txt", onlyIfSuccessful: true
             }
         }
+    }
+}
 
         stage('Deploy') {      
             agent any  
