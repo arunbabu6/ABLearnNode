@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGEE = 'arunthopil/pro-green-v4' // Corrected variable name
-        //SONARQUBE_TOKEN = credentials('sonar-aws')
+       // SONARQUBE_TOKEN = credentials('sonar-aws')
         DOCKERHUB_CREDENTIALS = credentials('dockerhub1')
         MONGO_URI = credentials('MONGO_URI')
         // SSH credentials for each environment
@@ -107,13 +107,13 @@ stage('Generate Documentation') {
             sshagent(['jenkinaccess']) {
                 def projectDir = '/opt/docker-green'
                 // Clear the remote documentation directory before copying new files
-                sh "ssh -i ab@host.docker.internal 'rm -rf ${projectDir}/backenddocs/*'"
-                sh "ssh -i ab@host.docker.internal 'mkdir -p ${projectDir}/backenddocs/docs'"
+                sh "ssh ab@host.docker.internal 'rm -rf ${projectDir}/backenddocs/*'"
+                sh "ssh ab@host.docker.internal 'mkdir -p ${projectDir}/backenddocs/docs'"
                 // Copy the source code to the 'backenddocs' directory on the Docker host
                 sh "scp -rp temp_backend/* ab@host.docker.internal:${projectDir}/backenddocs"
                 // Generate the documentation on the Docker host
                 sh """
-                ssh -i ab@host.docker.internal 'source ~/.nvm/nvm.sh && cd /opt/docker-green/backenddocs && /home/ubuntu/.nvm/versions/node/v21.7.3/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'
+                ssh ab@host.docker.internal 'source ~/.nvm/nvm.sh && cd /opt/docker-green/backenddocs && /home/ubuntu/.nvm/versions/node/v21.7.3/bin/jsdoc -c jsdoc.conf.json -r . -d ./docs'
                 """
                 // Optionally archive the generated documentation in Jenkins, copy it back from the Docker host
                 sh "scp -rp ab@host.docker.internal:${projectDir}/backenddocs/docs ./docs-backend"
@@ -202,8 +202,8 @@ stage('Generate Documentation') {
                         // Log in to DockerHub and push the image
                         withCredentials([usernamePassword(credentialsId: 'dockerhub1', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                             sh """
-                                echo '${DOCKER_PASSWORD}' | ssh -i ab@host.docker.internal 'docker login -u ${DOCKER_USERNAME} --password-stdin' > /dev/null 2>&1
-                                ssh -i ab@host.docker.internal 'docker push ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}'
+                                echo '${DOCKER_PASSWORD}' | ssh ab@host.docker.internal 'docker login -u ${DOCKER_USERNAME} --password-stdin' > /dev/null 2>&1
+                                ssh ab@host.docker.internal 'docker push ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}'
                             """
                         }
 
@@ -218,7 +218,7 @@ stage('Trivy Vulnerability Scan') {
             sshagent(['jenkinaccess']) {
                 // Combine commands into one SSH session and handle command execution properly
                 sh """
-                ssh -i ab@host.docker.internal '
+                ssh ab@host.docker.internal '
                     # Ensure the Trivy database is up to date
                     trivy image --download-db-only &&
 
@@ -255,7 +255,7 @@ stage('Generate SBOM') {
                 // Directly use Syft since it's installed in a standard location
                 def imageName = "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
                 sh """
-                ssh -i ab@host.docker.internal '
+                ssh ab@host.docker.internal '
                     # Generate SBOM and save it on the Docker host
                     syft $imageName -o cyclonedx-json=/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}.json
                 '
@@ -279,7 +279,7 @@ stage('Generate SBOM Table Output') {
                 def imageName = "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
                 // Generate SBOM in table format and save it to a file on the Docker host
                 sh """
-                ssh -i ab@host.docker.internal '
+                ssh ab@host.docker.internal '
                     syft $imageName -o table > /opt/docker-green/syft-sbom-${env.BUILD_NUMBER}-table.txt
                 '
                 """
