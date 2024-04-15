@@ -94,6 +94,13 @@ pipeline {
             }
         }
 
+        stage('Generate BOM') {
+            steps {
+                // Generate BOM file using CycloneDX
+                sh 'npx @cyclonedx/bom -o target/bom.xml'
+            }
+        }
+
 stage('Generate Documentation') {
     agent any
     steps {
@@ -297,13 +304,15 @@ stage('Generate SBOM Table Output') {
 
 stage('dependencyTrackPublisher') {
     steps {
-        withCredentials([string(credentialsId: 'kMt8OqUQZdQQXd3LdHihSlhdLqTIF9C9', variable: 'API_KEY')]) {
-            dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project-v5', projectVersion: 'v5', synchronous: true, dependencyTrackApiKey: API_KEY, projectProperties: [tags: ['tag1', 'tag2'], swidTagId: 'my swid tag', group: 'my group', parentId: 'parent-uuid']
-        }
+        // Use the OWASP_KEY directly since it's already defined in the environment variables
+        dependencyTrackPublisher artifact: 'target/bom.xml',
+                                 projectName: 'Green frontend',
+                                 projectVersion: 'v5-internal',
+                                 synchronous: true,
+                                 dependencyTrackApiKey: env.OWASP_KEY, // Use the environment variable here
+
     }
 }
-
-
     
 
         stage('Deploy') {      
