@@ -326,7 +326,7 @@ stage('Trivy Vulnerability Scan') {
                 }
             }
         }
-    }
+    
 
     post {
         always {
