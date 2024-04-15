@@ -94,12 +94,7 @@ pipeline {
             }
         }
 
-        stage('Generate BOM') {
-            steps {
-                // Generate BOM file using CycloneDX
-                sh 'npx @cyclonedx/bom -o target/bom.xml'
-            }
-        }
+
 
 stage('Generate Documentation') {
     agent any
