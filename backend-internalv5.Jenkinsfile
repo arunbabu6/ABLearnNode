@@ -302,18 +302,21 @@ stage('Generate SBOM Table Output') {
     }
 }
 
-stage('dependencyTrackPublisher') {
+stage('Submit SBOM to Dependency-Track') {
     steps {
-        // Use the OWASP_KEY directly since it's already defined in the environment variables
-        dependencyTrackPublisher artifact: 'target/bom.xml',
-                                 projectName: 'Green frontend',
-                                 projectVersion: 'v5-internal',
-                                 synchronous: true,
-                                 dependencyTrackApiKey: env.OWASP_KEY, // Use the environment variable here
+        script {
+            sshagent(['jenkinaccess']) {
+                // Assuming SBOM is generated and named properly
+                sh "scp ab@host.docker.internal:/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}.json ."
 
+                // Use Dependency-Track Publisher
+                dependencyTrackPublisher artifact: "syft-sbom-${env.BUILD_NUMBER}.json", projectName: 'Green frontend ', projectVersion: "${env.BUILD_NUMBER}", synchronous: true
+            }
+        }
     }
 }
-    
+
+
 
         stage('Deploy') {      
             agent any  
