@@ -247,6 +247,33 @@ stage('Trivy Vulnerability Scan') {
     }
 }
 
+stage('Generate SBOM') {
+    agent any
+    steps {
+        script {
+            sshagent(['sshtoaws']) {
+                // Assuming Syft is in the PATH; modify the command path as needed if installed in a custom directory
+                def imageName = "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
+                sh """
+                ssh -i /var/jenkins_home/greenworld.pem ubuntu@YOUR_DOCKER_HOST_IP '
+                    # Make sure the shell session is interactive to load .bashrc if Syft is installed in the user's home directory
+                    source ~/.bashrc
+                    
+                    # Generate SBOM and save it on the Docker host
+                    syft $imageName -o cyclonedx-json=/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}.json
+                '
+                """
+
+                // Copy the SBOM file back to Jenkins workspace
+                sh "scp ubuntu@YOUR_DOCKER_HOST_IP:/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}.json ."
+
+                // Archive the SBOM file as an artifact
+                archiveArtifacts artifacts: "syft-sbom-${env.BUILD_NUMBER}.json", onlyIfSuccessful: true
+            }
+        }
+    }
+}
+
 
 
 
