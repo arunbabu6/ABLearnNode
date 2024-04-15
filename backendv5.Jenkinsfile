@@ -277,17 +277,23 @@ stage('Generate SBOM Table Output') {
         script {
             sshagent(['sshtoaws']) {
                 def imageName = "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
-                // Display SBOM in a table format in the Jenkins console log
+                // Generate SBOM in table format and save it to a file on the Docker host
                 sh """
                 ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 '
-                    # Generate SBOM and output in table format
-                    syft $imageName -o table
+                    syft $imageName -o table > /opt/docker-green/syft-sbom-${env.BUILD_NUMBER}-table.txt
                 '
                 """
+
+                // Copy the table output file back to Jenkins workspace
+                sh "scp ubuntu@3.23.92.68:/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}-table.txt ."
+
+                // Archive the table output as an artifact
+                archiveArtifacts artifacts: "syft-sbom-${env.BUILD_NUMBER}-table.txt", onlyIfSuccessful: true
             }
         }
     }
 }
+
 
         stage('Deploy') {      
             agent any  
