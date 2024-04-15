@@ -221,9 +221,9 @@ stage('Trivy Vulnerability Scan') {
                 sh """
                 ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 '
                 trivy image --download-db-only && \
-                echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} with Trivy..." && \
-                trivy image --format json --output "/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} && \
-                trivy image --format table --output "/opt/docker-green/Trivy/trivy-report-txt--${env.BUILD_NUMBER}.txt" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}
+                echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} with Trivy..." && \
+                trivy image --format json --output "/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} && \
+                cat "/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json" | jq \'.Results[] | .Vulnerabilities[] | "Vulnerability ID: \\(.VulnerabilityID)\\nPkgName: \\(.PkgName)\\nInstalled Version: \\(.InstalledVersion)\\nSeverity: \\(.Severity)\\nTitle: \\(.Title)\\nDescription: \\(.Description)\\nMore Info: \\(.PrimaryURL)"\' > "/opt/docker-green/Trivy/trivy-report-readable--${env.BUILD_NUMBER}.txt"
                 '
                 """
 
@@ -231,14 +231,15 @@ stage('Trivy Vulnerability Scan') {
                 sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json ."
 
                 // Copy the human-readable text report file to the Jenkins workspace
-                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-txt--${env.BUILD_NUMBER}.txt ."
+                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-readable--${env.BUILD_NUMBER}.txt ."
 
                 // Archive both artifacts for the build
-                archiveArtifacts artifacts: "trivy-report-json--${env.BUILD_NUMBER}.json,trivy-report-txt--${env.BUILD_NUMBER}.txt", onlyIfSuccessful: true
+                archiveArtifacts artifacts: "trivy-report-json--${env.BUILD_NUMBER}.json,trivy-report-readable--${env.BUILD_NUMBER}.txt", onlyIfSuccessful: true
             }
         }
     }
 }
+
 
 
         stage('Deploy') {      
