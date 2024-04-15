@@ -8,6 +8,7 @@ pipeline {
         MONGO_URI = credentials('MONGO_URI')
         // SSH credentials for each environment
         PROJECT_DIR = '/opt/docker-green'
+        OWASP_KEY = credentials('dependency-track')
     }
 
     stages {
@@ -296,12 +297,18 @@ stage('Generate SBOM Table Output') {
 
 stage('Publish SBOM to Dependency-Track') {
     steps {
-        script {
-            // Assuming SBOM is generated and located at 'syft-sbom-${env.BUILD_NUMBER}.json'
-            dependencyTrackPublisher artifact: "syft-sbom-${env.BUILD_NUMBER}.json", projectName: "${env.DOCKER_IMAGEE}", projectVersion: "${env.BUILD_NUMBER}", synchronous: true
+        withCredentials([string(credentialsId: 'dependency-track-api-key', variable: 'API_KEY')]) {
+            dependencyTrackPublisher(
+                artifact: "syft-sbom-${env.BUILD_NUMBER}.json", // This should match the file you want to publish
+                projectName: "${env.DOCKER_IMAGEE}", // Adjusted to use an environment variable
+                projectVersion: "${env.BUILD_NUMBER}", // Use Jenkins BUILD_NUMBER or another version identifier
+                synchronous: true,
+                dependencyTrackApiKey: OWASP_KEY
+            )
         }
     }
 }
+
 
 
         stage('Deploy') {      
