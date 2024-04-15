@@ -219,23 +219,37 @@ stage('Trivy Vulnerability Scan') {
                 // Combine commands into one SSH session and handle command execution properly
                 sh """
                 ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 '
+                    # Download the Trivy DB and the HTML template
                     trivy image --download-db-only &&
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl > /opt/docker-green/Trivy/html.tpl &&
+
+                    # Perform the scan and generate HTML report
                     echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} with Trivy..." &&
-                    trivy image --format json --output "/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} &&
-                    cat "/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json" | jq -r ".Results[] | .Vulnerabilities[] | \\"Vulnerability ID: \(.VulnerabilityID)\\nPackage Name: \(.PkgName)\\nInstalled Version: \(.InstalledVersion)\\nSeverity: \(.Severity)\\nTitle: \(.Title)\\nDescription: \(.Description)\\nMore Info: \(.PrimaryURL)\\"" > "/opt/docker-green/Trivy/trivy-report-readable--${env.BUILD_NUMBER}.txt"
+                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER}
                 '
                 """
 
-                // Copy the JSON and readable report files to the Jenkins workspace
-                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-json--${env.BUILD_NUMBER}.json ."
-                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-readable--${env.BUILD_NUMBER}.txt ."
-
-                // Archive both artifacts for the build
-                archiveArtifacts artifacts: "trivy-report-json--${env.BUILD_NUMBER}.json,trivy-report-readable--${env.BUILD_NUMBER}.txt", onlyIfSuccessful: true
+                // Copy the HTML report file to the Jenkins workspace
+                sh "scp ubuntu@3.23.92.68:/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html ."
+                
+                // Archive the HTML report as an artifact
+                archiveArtifacts artifacts: "trivy-report-html--${env.BUILD_NUMBER}.html", onlyIfSuccessful: true
+                
+                // Publish the HTML report to Jenkins UI
+                publishHTML target: [
+                    reportName: 'Trivy Vulnerability HTML Report',
+                    reportDir: '.',
+                    reportFiles: 'trivy-report-html--${env.BUILD_NUMBER}.html',
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true
+                ]
             }
         }
     }
 }
+
+}
+
 
 
         stage('Deploy') {      
