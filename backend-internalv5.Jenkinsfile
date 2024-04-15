@@ -297,11 +297,12 @@ stage('Generate SBOM Table Output') {
 
 stage('dependencyTrackPublisher') {
     steps {
-        withCredentials([string(credentialsId: 'ZecTAOqvMJJCdYWpqJ4cadsz2yDm9xvP', variable: 'API_KEY')]) {
+        withCredentials([string(credentialsId: 'kMt8OqUQZdQQXd3LdHihSlhdLqTIF9C9', variable: 'API_KEY')]) {
             dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project-v5', projectVersion: 'v5', synchronous: true, dependencyTrackApiKey: API_KEY, projectProperties: [tags: ['tag1', 'tag2'], swidTagId: 'my swid tag', group: 'my group', parentId: 'parent-uuid']
         }
     }
 }
+
 
     
 
