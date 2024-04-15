@@ -224,8 +224,8 @@ stage('Trivy Vulnerability Scan') {
                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl > /opt/docker-green/Trivy/html.tpl &&
 
                     # Perform the scan and generate HTML report
-                    echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER} with Trivy..." &&
-                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-frontend-${env.BUILD_NUMBER}
+                    echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} with Trivy..." &&
+                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}
                 '
                 """
 
