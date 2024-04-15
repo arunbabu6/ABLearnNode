@@ -271,10 +271,23 @@ stage('Generate SBOM') {
     }
 }
 
-
-
-
-
+stage('Generate SBOM Table Output') {
+    agent any
+    steps {
+        script {
+            sshagent(['sshtoaws']) {
+                def imageName = "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
+                // Display SBOM in a table format in the Jenkins console log
+                sh """
+                ssh -i /var/jenkins_home/greenworld.pem ubuntu@3.23.92.68 '
+                    # Generate SBOM and output in table format
+                    syft $imageName -o table
+                '
+                """
+            }
+        }
+    }
+}
 
         stage('Deploy') {      
             agent any  
