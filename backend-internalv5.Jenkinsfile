@@ -295,16 +295,13 @@ stage('Generate SBOM Table Output') {
     }
 }
 
-stage('Publish SBOM to Dependency-Track') {
-    steps {
-        withCredentials([string(credentialsId: 'dependency-track-api-key', variable: 'API_KEY')]) {
-            dependencyTrackPublisher(
-                artifact: "syft-sbom-${env.BUILD_NUMBER}.json", // This should match the file you want to publish
-                projectName: "${env.DOCKER_IMAGEE}", // Adjusted to use an environment variable
-                projectVersion: "${env.BUILD_NUMBER}", // Use Jenkins BUILD_NUMBER or another version identifier
-                synchronous: true,
-                dependencyTrackApiKey: OWASP_KEY
-            )
+    stages {
+        stage('dependencyTrackPublisher') {
+            steps {
+                withCredentials([string(credentialsId: 'ZecTAOqvMJJCdYWpqJ4cadsz2yDm9xvP ', variable: 'API_KEY')]) {
+                    dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project-v5', projectVersion: 'v5', synchronous: true, dependencyTrackApiKey: API_KEY, projectProperties: [tags: ['tag1', 'tag2'], swidTagId: 'my swid tag', group: 'my group', parentId: 'parent-uuid']
+                }
+            }
         }
     }
 }
