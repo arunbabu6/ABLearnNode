@@ -224,7 +224,7 @@ stage('Trivy Vulnerability Scan') {
 
                     # Use the pre-placed custom HTML template for the scan
                     echo "Scanning ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} with Trivy..." &&
-                    trivy image --format template --template "@/opt/docker-green/Trivy/html2.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
+                    trivy image --format template --template "@/opt/docker-green/Trivy/html.tpl" --output "/opt/docker-green/Trivy/trivy-report-html--${env.BUILD_NUMBER}.html" "${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER}"
                 '
                 """
 
@@ -294,6 +294,15 @@ stage('Generate SBOM Table Output') {
     }
 }
 
+stage('Publish SBOM to Dependency-Track') {
+    steps {
+        script {
+            // Assuming SBOM is generated and located at 'syft-sbom-${env.BUILD_NUMBER}.json'
+            dependencyTrackPublisher artifact: "syft-sbom-${env.BUILD_NUMBER}.json", projectName: "${env.DOCKER_IMAGEE}", projectVersion: "${env.BUILD_NUMBER}", synchronous: true
+        }
+    }
+}
+
 
         stage('Deploy') {      
             agent any  
@@ -334,7 +343,7 @@ stage('Generate SBOM Table Output') {
                         withCredentials([string(credentialsId: 'MONGO_URI', variable: 'MONGO_URI_SECRET')]) {
                             sshagent(['jenkinaccess']) {
                                 sh """
-                                    ssh -o StrictHostKeyChecking=no ubuntu@18.227.81.136 '
+                                    ssh -o StrictHostKeyChecking=no ab@host.docker.internal '
                                     docker pull ${env.DOCKER_IMAGEE}:${env.ENVIRONMENT.toLowerCase()}-backend-${env.BUILD_NUMBER} &&
                                     docker stop globalgreen-backend-v4 || true &&
                                     docker rm globalgreen-backend-v4 || true &&
