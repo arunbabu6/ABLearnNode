@@ -300,28 +300,16 @@ stage('Generate SBOM Table Output') {
 stage('Dependency-Check') {
     steps {
         script {
-            // Assuming your project's dependencies are declared in files like package.json, pom.xml, etc.
             dependencyCheck additionalArguments: '',
-                scanPath: '.', // Adjust this if your project files are in a specific subdirectory
-                dataDirectory: '', // Optional: specify if you want to use a custom database directory
-                suppressionFile: '', // Optional: path to a suppression file
+                scanPath: '.', 
                 includeHtmlReports: true,
                 includeCsvReports: false,
-                includeJsonReports: true,
+                includeJsonReports: true, // Ensure JSON report is enabled
                 includeVulnReports: true
         }
-        // Archive Dependency-Check reports
-        archiveArtifacts artifacts: 'dependency-check-report.*', fingerprint: true
-        // Optionally, publish HTML reports if generated
-        publishHTML target: [
-            reportName: 'Dependency-Check Report',
-            reportDir: 'dependency-check-report',
-            reportFiles: 'index.html',
-            keepAll: true,
-            alwaysLinkToLastBuild: true
-        ]
     }
 }
+
 
 stage('Publish Dependency-Check Report') {
     steps {
@@ -345,22 +333,6 @@ stage('Review Dependency-Check Results') {
         }
     }
 }
-
-
-stage('Dependency-Check') {
-    steps {
-        script {
-            dependencyCheck additionalArguments: '',
-                scanPath: '.', 
-                includeHtmlReports: true,
-                includeCsvReports: false,
-                includeJsonReports: true, // Ensure JSON report is enabled
-                includeVulnReports: true
-        }
-    }
-}
-
-
 
 
         stage('Deploy') {      
