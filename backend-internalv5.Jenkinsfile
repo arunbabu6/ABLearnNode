@@ -305,7 +305,7 @@ stage('Submit SBOM to Dependency-Track') {
                 sh "scp ab@host.docker.internal:/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}.json ."
 
                 // Use Dependency-Track Publisher
-                dependencyTrackPublisher artifact: "syft-sbom-${env.BUILD_NUMBER}.json", projectName: 'Green frontend ', projectVersion: "${env.BUILD_NUMBER}", synchronous: true
+                dependencyTrackPublisher artifact: "syft-sbom-${env.BUILD_NUMBER}.json", projectName: 'Green frontend', projectVersion: "${env.BUILD_NUMBER}", synchronous: true
             }
         }
     }
