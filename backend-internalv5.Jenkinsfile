@@ -297,6 +297,12 @@ stage('Generate SBOM Table Output') {
     }
 }
 
+stage('Invoke Dependency-Check') {
+    steps {
+        dependencyCheckPublisher pattern: '*/**/package-lock.json', formats: 'XML', outputFileFormat: 'XML', includeHtmlReports: false
+    }
+}
+
 stage('Dependency-Check') {
     steps {
         script {
