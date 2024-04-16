@@ -297,17 +297,53 @@ stage('Generate SBOM Table Output') {
     }
 }
 
-stage('Submit SBOM to Dependency-Track') {
+stage('Dependency-Check') {
     steps {
         script {
-            sshagent(['jenkinaccess']) {
-                // Assuming SBOM is generated and named properly
-                sh "scp ab@host.docker.internal:/opt/docker-green/syft-sbom-${env.BUILD_NUMBER}.json ."
-
-                // Use Dependency-Track Publisher
-                dependencyTrackPublisher artifact: "syft-sbom-${env.BUILD_NUMBER}.json", projectName: 'Green frontend', projectVersion: "${env.BUILD_NUMBER}", synchronous: true
-            }
+            // Assuming your project's dependencies are declared in files like package.json, pom.xml, etc.
+            dependencyCheck additionalArguments: '',
+                scanPath: '.', // Adjust this if your project files are in a specific subdirectory
+                dataDirectory: '', // Optional: specify if you want to use a custom database directory
+                suppressionFile: '', // Optional: path to a suppression file
+                includeHtmlReports: true,
+                includeCsvReports: false,
+                includeJsonReports: true,
+                includeVulnReports: true
         }
+        // Archive Dependency-Check reports
+        archiveArtifacts artifacts: 'dependency-check-report.*', fingerprint: true
+        // Optionally, publish HTML reports if generated
+        publishHTML target: [
+            reportName: 'Dependency-Check Report',
+            reportDir: 'dependency-check-report',
+            reportFiles: 'index.html',
+            keepAll: true,
+            alwaysLinkToLastBuild: true
+        ]
+    }
+}
+
+stage('Publish Dependency-Check Report') {
+    steps {
+        dependencyCheckPublisher pattern: '**/dependency-check-report.*',
+            failedTotalHigh: '0', // Example threshold settings for failing the build
+            unstableTotalNormal: '10' // Example threshold settings for making the build unstable
+    }
+}
+
+stage('Archive and Publish HTML Reports') {
+    steps {
+        // Archive all report formats for future reference
+        archiveArtifacts artifacts: '**/dependency-check-report.*', fingerprint: true
+
+        // Publish HTML report for easy web access
+        publishHTML target: [
+            reportName: 'Dependency-Check HTML Report',
+            reportDir: 'dependency-check-report', // Adjust if your directory structure differs
+            reportFiles: 'dependency-check-report.html',
+            alwaysLinkToLastBuild: true,
+            keepAll: true
+        ]
     }
 }
 
